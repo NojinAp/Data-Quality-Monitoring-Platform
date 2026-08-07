@@ -25,21 +25,17 @@ def duplicate_check(table_name: str, column_name: str):
         )
         duplicates = duplicate_rows.fetchall()
         duplicate_values = len(duplicates)
-        duplicate_count = sum(row[1]-1 for row in duplicates)
+        duplicate_count = sum(row[1] - 1 for row in duplicates)
 
     if duplicate_count > 0:
         status = "FAILED"
         result["duplicates"] = [
             {"value": row[0], "count": row[1]} for row in duplicates
-        ] 
-        
+        ]
+
     result["failed_rows"] = duplicate_count
     result["status"] = status
 
     print(f"Number of duplicate values in {column_name}: {duplicate_count}")
-    
+
     return result
-
-
-print(duplicate_check("raw_orders", "order_id"))
-print(duplicate_check("raw_orders", "customer_id"))
