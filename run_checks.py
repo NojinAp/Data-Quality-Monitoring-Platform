@@ -23,61 +23,62 @@ CHECK_FUNCTIONS = {
     "business_rule_check": business_rule_check,
 }
 
-started_at = utcnow()
+if __name__ == "__main__":
+    started_at = utcnow()
 
-for entry in data:
-    check_function = CHECK_FUNCTIONS[entry["check_type"]]
+    for entry in data:
+        check_function = CHECK_FUNCTIONS[entry["check_type"]]
 
-    if entry["check_type"] == "business_rule_check":
-        result = check_function(entry["table"], entry["column"], entry["rule"])
-    else:
-        result = check_function(entry["table"], entry["column"])
+        if entry["check_type"] == "business_rule_check":
+            result = check_function(entry["table"], entry["column"], entry["rule"])
+        else:
+            result = check_function(entry["table"], entry["column"])
 
-    new_row = QualityResult(
-        dataset=result["dataset"],
-        check_name=result["check_name"],
-        status=result.get("status", "UNKNOWN"),
-        failed_rows=result.get("failed_rows", 0),
+        new_row = QualityResult(
+            dataset=result["dataset"],
+            check_name=result["check_name"],
+            status=result.get("status", "UNKNOWN"),
+            failed_rows=result.get("failed_rows", 0),
+        )
+        session.add(new_row)
+
+    finished_at = utcnow()
+
+    duration_seconds = (finished_at - started_at).total_seconds()
+
+    status = "SUCCESS"
+
+    try:
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        session.flush()
+        status = "FAILED"
+
+
+    with engine.connect() as conn:
+        from sqlalchemy import text
+
+        tables = {entry["table"] for entry in data}
+        total_rows = 0
+        for table_name in tables:
+            count = conn.execute(text(f"SELECT COUNT(*) FROM {table_name}")).scalar()
+            total_rows += count
+        print(tables)
+        print(total_rows)
+
+    new_row = PipelineRun(
+        status=status,
+        records_processed=total_rows,
+        started_at=started_at,
+        finished_at=finished_at,
+        duration_seconds=duration_seconds,
     )
+
     session.add(new_row)
 
-finished_at = utcnow()
-
-duration_seconds = (finished_at - started_at).total_seconds()
-
-status = "SUCCESS"
-
-try:
-    session.commit()
-except Exception as e:
-    session.rollback()
-    session.flush()
-    status = "FAILED"
-
-
-with engine.connect() as conn:
-    from sqlalchemy import text
-
-    tables = {entry["table"] for entry in data}
-    total_rows = 0
-    for table_name in tables:
-        count = conn.execute(text(f"SELECT COUNT(*) FROM {table_name}")).scalar()
-        total_rows += count
-    print(tables)
-    print(total_rows)
-
-new_row = PipelineRun(
-    status=status,
-    records_processed=total_rows,
-    started_at=started_at,
-    finished_at=finished_at,
-    duration_seconds=duration_seconds,
-)
-
-session.add(new_row)
-
-try:
-    session.commit()
-except Exception as e:
-    session.rollback()
-    session.flush()
+    try:
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        session.flush()
