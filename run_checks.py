@@ -5,9 +5,10 @@ from database.models import QualityResult, PipelineRun, utcnow
 from validation.business_rules import business_rule_check
 from validation.duplicate_check import duplicate_check
 from validation.null_check import null_check
-from database.connection import engine, SessionLocal
 
 sys.path.insert(0, str(Path(__file__).parent))
+
+from database.connection import engine, SessionLocal
 
 PROJECT_ROOT = Path(__file__).parent
 

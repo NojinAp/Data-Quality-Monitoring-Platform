@@ -3,9 +3,10 @@ import yaml
 from fastapi import FastAPI
 from pathlib import Path
 from sqlalchemy import text
-from database.connection import engine
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from database.connection import engine
 
 app = FastAPI()
 
@@ -40,4 +41,17 @@ def read_quality_report():
         "failed_checks": failed_checks,
         "passed_checks": passed_checks,
         "quality_score": quality_score,
+    }
+    
+@app.get("/pipeline-status")
+def read_pipeline_status():
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT TOP 1 * FROM pipeline_runs ORDER BY started_at DESC"))
+        row = result.fetchone()
+    return {
+        "status": row.status if row else "UNKNOWN",
+        "records_processed": row.records_processed if row else 0,
+        "started_at": row.started_at if row else None,
+        "finished_at": row.finished_at if row else None,
+        "duration_seconds": row.duration_seconds if row else 0,
     }
