@@ -1,14 +1,13 @@
 from pathlib import Path
 import yaml
 import sys
-
-sys.path.insert(0, str(Path(__file__).parent))
-
 from database.models import QualityResult, PipelineRun, utcnow
 from validation.business_rules import business_rule_check
 from validation.duplicate_check import duplicate_check
 from validation.null_check import null_check
 from database.connection import engine, SessionLocal
+
+sys.path.insert(0, str(Path(__file__).parent))
 
 PROJECT_ROOT = Path(__file__).parent
 
@@ -61,9 +60,7 @@ with engine.connect() as conn:
     tables = {entry["table"] for entry in data}
     total_rows = 0
     for table_name in tables:
-        count = conn.execute(
-            text(f"SELECT COUNT(*) FROM {table_name}")
-        ).scalar()
+        count = conn.execute(text(f"SELECT COUNT(*) FROM {table_name}")).scalar()
         total_rows += count
     print(tables)
     print(total_rows)
