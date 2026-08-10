@@ -1,0 +1,42 @@
+# null_check
+- check_type: null_check
+  table: raw_customers
+  column: email
+- check_type: null_check
+  table: raw_products
+  column: supplier
+- check_type: null_check
+  table: raw_orders
+  column: customer_id
+- check_type: null_check
+  table: raw_inventory
+  column: warehouse
+
+# duplicate_check
+- check_type: duplicate_check
+  table: raw_customers
+  column: customer_id
+- check_type: duplicate_check
+  table: raw_products
+  column: product_id
+- check_type: duplicate_check
+  table: raw_orders
+  column: order_id
+
+# business_rule_check
+- check_type: business_rule_check
+  table: raw_products
+  column: price
+  rule: price >= 0
+- check_type: business_rule_check
+  table: raw_orders
+  column: quantity
+  rule: quantity > 0
+- check_type: business_rule_check
+  table: raw_inventory
+  column: stock_quantity
+  rule: stock_quantity >= 0
+- check_type: business_rule_check
+  table: raw_orders
+  column: order_date
+  rule: order_date <= CAST(GETDATE() AS DATE)

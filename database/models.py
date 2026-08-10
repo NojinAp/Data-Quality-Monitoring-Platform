@@ -23,7 +23,7 @@ class RawCustomer(Base):
     __tablename__ = "raw_customers"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    customer_id = Column(Integer, nullable=True)       # nullable: CSV can have bad rows
+    customer_id = Column(Integer, nullable=True)       
     name = Column(String(200), nullable=True)
     country = Column(String(100), nullable=True)
     email = Column(String(255), nullable=True)         # source data has ~3% missing
