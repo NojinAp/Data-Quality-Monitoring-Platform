@@ -6,5 +6,3 @@ pyyaml
 python-dotenv
 pandas
 faker
-pytest
-httpx
