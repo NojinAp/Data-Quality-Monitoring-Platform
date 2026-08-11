@@ -9,7 +9,7 @@ customer_id, etc.) is not guaranteed unique in the raw data.
 
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, Integer, String, Numeric, Date, DateTime
+from sqlalchemy import Column, Date, DateTime, Integer, Numeric, String
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()

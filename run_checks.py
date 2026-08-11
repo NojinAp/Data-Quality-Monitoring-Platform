@@ -1,14 +1,17 @@
-from pathlib import Path
-import yaml
 import sys
-from database.models import QualityResult, PipelineRun, utcnow
+from pathlib import Path
+
+import yaml
+from sqlalchemy.exc import SQLAlchemyError
+
+from database.models import PipelineRun, QualityResult, utcnow
 from validation.business_rules import business_rule_check
 from validation.duplicate_check import duplicate_check
 from validation.null_check import null_check
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from database.connection import engine, SessionLocal
+from database.connection import SessionLocal, engine
 
 PROJECT_ROOT = Path(__file__).parent
 
@@ -50,11 +53,10 @@ if __name__ == "__main__":
 
     try:
         session.commit()
-    except Exception as e:
+    except SQLAlchemyError:
         session.rollback()
         session.flush()
         status = "FAILED"
-
 
     with engine.connect() as conn:
         from sqlalchemy import text
@@ -79,6 +81,7 @@ if __name__ == "__main__":
 
     try:
         session.commit()
-    except Exception as e:
+    except SQLAlchemyError:
         session.rollback()
         session.flush()
+        status = "FAILED"

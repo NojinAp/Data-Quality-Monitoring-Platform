@@ -3,9 +3,9 @@ Tests for null_check, duplicate_check, business_rule_check.
 These are integration tests against Azure SQL data.
 """
 
-from validation.null_check import null_check
-from validation.duplicate_check import duplicate_check
 from validation.business_rules import business_rule_check
+from validation.duplicate_check import duplicate_check
+from validation.null_check import null_check
 
 
 # null_check

@@ -10,7 +10,7 @@ Flaw categories injected, and which check they're meant to exercise:
 """
 
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pandas as pd
 from faker import Faker
@@ -155,7 +155,7 @@ def generate_orders(customers: pd.DataFrame, products: pd.DataFrame, n: int) -> 
     # Inject future order_date
     future_idx = df.sample(frac=0.01, random_state=8).index
     df.loc[future_idx, "order_date"] = df.loc[future_idx, "order_date"].apply(
-        lambda d: datetime.now().date() + timedelta(days=random.randint(1, 90))
+        lambda d: datetime.now(timezone.utc).date() + timedelta(days=random.randint(1, 90))
     )
 
     return df
