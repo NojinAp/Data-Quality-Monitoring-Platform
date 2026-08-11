@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from database.models import Base
 
 
-def validate_identifier(table_name: str, column_name: str = None):
+def validate_identifier(table_name: str, column_name: str | None = None):
     """
     Raises ValueError if table_name isn't a real table, or if column_name
     isn't a real column on that table.

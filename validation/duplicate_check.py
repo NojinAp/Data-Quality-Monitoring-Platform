@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 
 from sqlalchemy import text
+
 from validation.guards import validate_identifier
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
