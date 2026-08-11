@@ -1,7 +1,8 @@
 import sys
+from pathlib import Path
+
 import yaml
 from fastapi import FastAPI
-from pathlib import Path
 from sqlalchemy import text
 
 from run_checks import CHECK_FUNCTIONS

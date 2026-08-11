@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+
 from sqlalchemy import text
 
 sys.path.insert(0, str(Path(__file__).parent.parent))

@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+
 from sqlalchemy import text
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -24,7 +25,6 @@ def duplicate_check(table_name: str, column_name: str):
             )
         )
         duplicates = duplicate_rows.fetchall()
-        duplicate_values = len(duplicates)
         duplicate_count = sum(row[1] - 1 for row in duplicates)
 
     if duplicate_count > 0:
