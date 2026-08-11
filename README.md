@@ -18,11 +18,11 @@ The platform ingests raw customer, product, order, and inventory data into Azure
 
 ## Tech stack
 
-Python, FastAPI, SQLAlchemy, pymssql, PyYAML, Azure SQL Database (serverless tier), Docker, pytest, GitHub Actions.
+Python, FastAPI, SQLAlchemy, pymssql, PyYAML, Azure SQL Database (serverless tier), Docker, pytest, GitHub Actions, Azure Container Registry, Azure Container Apps, Azure Data Factory, Power BI.
 
 ## Project structure
 
-The `data` folder holds the synthetic data generator and the CSVs it produces. `database` holds the SQLAlchemy models and the connection setup. `validation` holds the three check functions (null, duplicate, business rule). `config` holds the YAML file defining which checks run against which columns. `api` holds the FastAPI app. `tests` holds the pytest suite. `run_checks.py` at the root is the batch runner that ties the checks, the YAML config, and the database together.
+The `data` folder holds the synthetic data generator and the CSVs it produces. `database` holds the SQLAlchemy models and the connection setup. `validation` holds the three check functions (null, duplicate, business rule), plus a `guards.py` module used for input validation. `config` holds the YAML file defining which checks run against which columns. `api` holds the FastAPI app. `tests` holds the pytest suite. `run_checks.py` at the root is the batch runner that ties the checks, the YAML config, and the database together.
 
 ## The pipeline, step by step
 
@@ -30,7 +30,7 @@ I generate synthetic customer, product, order, and inventory data with a fixed r
 
 ## API
 
-Four endpoints, all backed by live queries against Azure SQL rather than cached or fake data.
+Four endpoints, all backed by live queries against Azure SQL.
 
 `GET /` is a basic health check.
 
@@ -40,13 +40,31 @@ Four endpoints, all backed by live queries against Azure SQL rather than cached 
 
 `POST /validate/{dataset}` takes a friendly dataset name like `orders`, maps it to the real table name through a small whitelist (so nothing arbitrary can reach the SQL layer), runs just the checks relevant to that dataset, and persists the results the same way the batch runner does.
 
+## Security
+
+The three check functions build SQL by interpolating table and column names, which would be a real SQL injection risk if that input ever came from outside my own code. `validation/guards.py` closes that gap: before any check builds a query, it validates the table and column names against the actual SQLAlchemy schema in `models.py`, using the schema itself as the source of truth. Anything that isn't a real table or a real column on that table gets rejected before it ever reaches the database.
+
 ## Testing
 
-The pytest suite covers all three check functions against known values from the seeded synthetic data, plus all four API endpoints using FastAPI's test client. These are real integration tests against the live database.
+The pytest suite covers all three check functions against known values from the seeded synthetic data, plus all four API endpoints using FastAPI's test client. These are real integration tests, but they run against a dedicated test database, so a CI run never touches production data or leaves test artifacts sitting in `quality_results`.
 
 ## Docker and CI
 
-The service is containerized with a Dockerfile that installs dependencies before copying application code. I set up GitHub Actions to build and validate everything remotely. The CI pipeline runs four jobs on every pull request: linting with ruff, the Docker build, the full pytest suite with coverage reporting, and a secret scan to catch any credentials that might accidentally get committed. The `main` branch is protected, so none of that can be skipped: changes have to go through a pull request and pass every check before they can merge.
+The service is containerized with a Dockerfile that installs dependencies before copying application code. I set up GitHub Actions to build and validate everything remotely. The CI pipeline runs four jobs on every pull request: linting with ruff, the Docker build, the full pytest suite with coverage reporting, and a secret scan to catch any credentials that might accidentally get committed. The `main` branch is protected, so none of that can be skipped: changes have to go through a pull request and pass every check before they can merge. On every merge to `main`, the same pipeline logs into Azure Container Registry, pushes the newly built image, and then rolls that image out to Azure Container Apps automatically, so a merge results in a live deployment without a manual redeploy step.
+
+## Deployment
+
+The API is deployed to Azure Container Apps, pulling its image from Azure Container Registry, and is publicly reachable over HTTPS. The database credentials are passed in as Container Apps secrets at runtime, the same pattern used for local development with a `.env` file. The entire build and deploy path runs through GitHub Actions and Azure infrastructure.
+
+## Orchestration
+
+The four validation runs and the dashboard refresh are tied together with an Azure Data Factory pipeline instead of running on independent schedules. Four Web Activities call `POST /validate/{dataset}` for customers, products, orders, and inventory in sequence, each one only firing after the previous one succeeds, so a slow or failed run doesn't let a later step proceed against incomplete data. A fifth Web Activity calls the Power BI REST API to trigger a dataset refresh, and it only runs once all four validation steps have genuinely completed. A daily trigger kicks the whole chain off automatically, so the pipeline runs and the dashboard reflects the results without anyone manually running a script or clicking refresh.
+
+## Dashboard
+
+I built a Power BI report on top of `quality_results` and `pipeline_runs`, covering the same three areas the original project plan called for: an overview with the current quality score and failed check count, a pipeline health view with the latest run's status and duration, and a table of every check with conditional formatting on status, plus a trend line of failed rows over time.
+
+![Dashboard Screenshot](assets/pbi.png)
 
 ## Setup
 
