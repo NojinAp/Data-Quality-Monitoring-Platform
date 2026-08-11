@@ -45,6 +45,17 @@ jobs:
         run: |
           docker tag data-quality-api:ci-check ${{ secrets.ACR_LOGIN_SERVER }}/data-quality-api:latest
           docker push ${{ secrets.ACR_LOGIN_SERVER }}/data-quality-api:latest
+          
+      - name: Azure login
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy new revision
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          az containerapp update --name data-quality-api --resource-group data-quality-rg --image ${{ secrets.ACR_LOGIN_SERVER }}/data-quality-api:latest
 
   test:
     runs-on: ubuntu-latest
@@ -66,7 +77,7 @@ jobs:
       - name: Run tests with coverage
         env:
           AZURE_SQL_SERVER: ${{ secrets.AZURE_SQL_SERVER }}
-          AZURE_SQL_DB: ${{ secrets.AZURE_SQL_DB }}
+          AZURE_SQL_DB: ${{ secrets.AZURE_SQL_DB_TEST }}
           AZURE_SQL_USER: ${{ secrets.AZURE_SQL_USER }}
           AZURE_SQL_PASSWORD: ${{ secrets.AZURE_SQL_PASSWORD }}
         run: pytest -v --cov=. --cov-report=term-missing
