@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 
 from sqlalchemy import text
+from validation.guards import validate_identifier
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -12,6 +13,8 @@ def business_rule_check(table_name: str, column_name: str, rule: str):
     """
     Check for business rule violations in a specified column of a table.
     """
+    validate_identifier(table_name, column_name)
+
     result = {}
     status = "PASSED"
 

@@ -32,6 +32,20 @@ jobs:
       - name: Build Docker image
         run: docker build -t data-quality-api:ci-check .
 
+      - name: Log in to Azure Container Registry
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Tag and push image
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          docker tag data-quality-api:ci-check ${{ secrets.ACR_LOGIN_SERVER }}/data-quality-api:latest
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/data-quality-api:latest
+
   test:
     runs-on: ubuntu-latest
     needs: lint

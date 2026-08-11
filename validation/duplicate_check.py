@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 
 from sqlalchemy import text
+from validation.guards import validate_identifier
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -12,6 +13,8 @@ def duplicate_check(table_name: str, column_name: str):
     """
     Check for duplicate values in a specified column of a table.
     """
+    validate_identifier(table_name, column_name)
+
     result = {}
     status = "PASSED"
 
